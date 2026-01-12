@@ -63,9 +63,16 @@ if ($step == 2 && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $envContent .= "DB_NAME={$dbName}\n";
         $envContent .= "DB_USER={$dbUser}\n";
         $envContent .= "DB_PASS={$dbPass}\n\n";
+        // Auto-detect current URL
+        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ||
+                     (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ||
+                     (!empty($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443) ? 'https' : 'http';
+        $host = $_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? 'localhost';
+        $currentUrl = $protocol . '://' . $host;
+
         $envContent .= "# Application Configuration\n";
         $envContent .= "APP_NAME=Google Maps Monitor\n";
-        $envContent .= "APP_URL=http://localhost\n";
+        $envContent .= "APP_URL={$currentUrl}\n";
         $envContent .= "APP_ENV=production\n";
         $envContent .= "APP_DEBUG=false\n";
         $envContent .= "TIMEZONE=Europe/Warsaw\n\n";

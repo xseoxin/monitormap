@@ -267,17 +267,54 @@ function inputs() {
 }
 
 /**
+ * Get current application URL (auto-detect)
+ */
+function appUrl() {
+    static $cachedUrl = null;
+
+    if ($cachedUrl !== null) {
+        return $cachedUrl;
+    }
+
+    // Try to get from config first
+    $configUrl = Config::get('url', null, 'app');
+    if ($configUrl && $configUrl !== 'http://localhost') {
+        $cachedUrl = rtrim($configUrl, '/');
+        return $cachedUrl;
+    }
+
+    // Auto-detect from server variables
+    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ||
+                 (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ||
+                 (!empty($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443)
+                 ? 'https' : 'http';
+
+    $host = $_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? 'localhost';
+
+    // Remove port if it's default
+    if (($protocol === 'http' && strpos($host, ':80') !== false) ||
+        ($protocol === 'https' && strpos($host, ':443') !== false)) {
+        $host = preg_replace('/:\d+$/', '', $host);
+    }
+
+    $cachedUrl = $protocol . '://' . $host;
+    return $cachedUrl;
+}
+
+/**
  * Asset URL helper
  */
 function asset($path) {
-    return Config::get('url', 'http://localhost', 'app') . '/' . ltrim($path, '/');
+    // Use relative path for assets (works everywhere)
+    return '/' . ltrim($path, '/');
 }
 
 /**
  * URL helper
  */
 function url($path = '') {
-    return Config::get('url', 'http://localhost', 'app') . '/' . ltrim($path, '/');
+    // Use relative path
+    return '/' . ltrim($path, '/');
 }
 
 /**
