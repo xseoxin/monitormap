@@ -10,14 +10,16 @@ if (!defined('APP_ROOT')) {
     die('Direct access not permitted');
 }
 
+// env() function is loaded from includes/env.php
+
 return [
-    'host' => getenv('DB_HOST') ?: 'localhost',
-    'database' => getenv('DB_NAME') ?: 'maps_monitor',
-    'username' => getenv('DB_USER') ?: 'root',
-    'password' => getenv('DB_PASS') ?: '',
+    'host' => env('DB_HOST', 'localhost'),
+    'database' => env('DB_NAME', 'maps_monitor'),
+    'username' => env('DB_USER', 'root'),
+    'password' => env('DB_PASS', ''),
     'charset' => 'utf8mb4',
     'collation' => 'utf8mb4_unicode_ci',
-    'port' => getenv('DB_PORT') ?: 3306,
+    'port' => (int)env('DB_PORT', 3306),
     'options' => [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,

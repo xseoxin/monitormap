@@ -37,9 +37,12 @@ if (file_exists(APP_ROOT . '/.env')) {
             }
 
             if (!array_key_exists($name, $_ENV) && !array_key_exists($name, $_SERVER)) {
-                putenv("$name=$value");
+                // Set in $_ENV and $_SERVER (works even if putenv() is disabled)
                 $_ENV[$name] = $value;
                 $_SERVER[$name] = $value;
+
+                // Try putenv anyway (will work if not disabled, fail silently if disabled)
+                @putenv("$name=$value");
             }
         }
     }
@@ -56,8 +59,11 @@ if ($debug) {
     ini_set('log_errors', 1);
 }
 
+// Load environment helper (works even if putenv() is disabled)
+require_once __DIR__ . '/env.php';
+
 // Set timezone
-date_default_timezone_set(getenv('TIMEZONE') ?: 'Europe/Warsaw');
+date_default_timezone_set(env('TIMEZONE', 'Europe/Warsaw'));
 
 // Autoload classes
 spl_autoload_register(function ($className) {

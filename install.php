@@ -151,7 +151,14 @@ if ($step == 3 && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 list($name, $value) = explode('=', $line, 2);
                 $envName = trim($name);
                 $envValue = trim($value);
-                putenv("$envName=$envValue");
+
+                // Use $_ENV and $_SERVER instead of putenv() (which may be disabled)
+                $_ENV[$envName] = $envValue;
+                $_SERVER[$envName] = $envValue;
+
+                // Try putenv anyway (will fail silently if disabled)
+                @putenv("$envName=$envValue");
+
                 debugLog("Set env: $envName = " . (strlen($envValue) > 50 ? substr($envValue, 0, 50) . '...' : $envValue), $debugLog);
             }
         } else {
@@ -164,6 +171,13 @@ if ($step == 3 && $_SERVER['REQUEST_METHOD'] === 'POST') {
         debugLog('init.php loaded successfully', $debugLog);
 
         debugLog('Step 3: Testing database connection', $debugLog);
+
+        // Log what credentials will be used
+        debugLog('DB credentials being used:', $debugLog);
+        debugLog('  DB_HOST from $_ENV: ' . ($_ENV['DB_HOST'] ?? 'NOT SET'), $debugLog);
+        debugLog('  DB_NAME from $_ENV: ' . ($_ENV['DB_NAME'] ?? 'NOT SET'), $debugLog);
+        debugLog('  DB_USER from $_ENV: ' . ($_ENV['DB_USER'] ?? 'NOT SET'), $debugLog);
+        debugLog('  DB_PASS from $_ENV: ' . (isset($_ENV['DB_PASS']) ? '***SET***' : 'NOT SET'), $debugLog);
 
         try {
             debugLog('Step 3a: Attempting to create Database instance', $debugLog);
