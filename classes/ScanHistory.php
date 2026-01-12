@@ -97,7 +97,7 @@ class ScanHistory {
     /**
      * Update scan status
      */
-    public function updateStatus($scanId, $status, $errorMessage = null) {
+    public function updateStatus($scanId, $status, $data = []) {
         $sql = "UPDATE scan_history SET status = ?";
         $params = [$status];
 
@@ -106,9 +106,15 @@ class ScanHistory {
                        duration_seconds = TIMESTAMPDIFF(SECOND, started_at, NOW())";
         }
 
-        if ($errorMessage !== null) {
+        // Support additional data fields
+        if (isset($data['total_grid_points'])) {
+            $sql .= ", total_grid_points = ?";
+            $params[] = $data['total_grid_points'];
+        }
+
+        if (isset($data['error_message'])) {
             $sql .= ", error_message = ?";
-            $params[] = $errorMessage;
+            $params[] = $data['error_message'];
         }
 
         $sql .= " WHERE id = ?";
@@ -277,5 +283,44 @@ class ScanHistory {
         $sql .= " GROUP BY DATE(started_at) ORDER BY scan_date DESC";
 
         return $this->db->fetchAll($sql, $params);
+    }
+
+    /**
+     * Complete a scan (mark as completed with statistics)
+     */
+    public function complete($scanId, $data = []) {
+        $sql = "UPDATE scan_history SET
+                status = 'completed',
+                completed_at = NOW(),
+                duration_seconds = TIMESTAMPDIFF(SECOND, started_at, NOW())";
+
+        $params = [];
+
+        if (isset($data['scanned_points'])) {
+            $sql .= ", scanned_points = ?";
+            $params[] = $data['scanned_points'];
+        }
+
+        if (isset($data['failed_points'])) {
+            $sql .= ", failed_points = ?";
+            $params[] = $data['failed_points'];
+        }
+
+        if (isset($data['results_found'])) {
+            $sql .= ", results_found = ?";
+            $params[] = $data['results_found'];
+        }
+
+        $sql .= " WHERE id = ?";
+        $params[] = $scanId;
+
+        return $this->db->execute($sql, $params) > 0;
+    }
+
+    /**
+     * Fail a scan (mark as failed with error message)
+     */
+    public function fail($scanId, $errorMessage) {
+        return $this->markAsFailed($scanId, $errorMessage);
     }
 }

@@ -7,11 +7,8 @@ define('APP_ROOT', __DIR__);
 require_once __DIR__ . '/includes/init.php';
 require_once __DIR__ . '/includes/auth_check.php';
 
-// Admin only
-if (!Auth::isAdmin()) {
-    setFlash('error', MSG_ERROR_UNAUTHORIZED);
-    redirect('/index.php');
-}
+$currentUser = Auth::user();
+$isAdmin = Auth::isAdmin();
 
 $proxyModel = new Proxy();
 $proxies = $proxyModel->getAll();
@@ -23,11 +20,19 @@ include __DIR__ . '/includes/header.php';
 
 <div class="page-header">
     <h1>Proxy Management</h1>
+    <?php if ($isAdmin): ?>
     <div class="page-actions">
         <a href="/proxy_add.php" class="btn btn-primary">➕ Add Proxy</a>
         <a href="/proxy_import.php" class="btn btn-secondary">📤 Import CSV</a>
     </div>
+    <?php endif; ?>
 </div>
+
+<?php if (!$isAdmin): ?>
+<div class="alert alert-info" style="margin-bottom: 20px;">
+    <strong>Note:</strong> Proxy management is available for administrators. Contact your admin to add or modify proxies.
+</div>
+<?php endif; ?>
 
 <div class="stats-grid" style="margin-bottom: 30px;">
     <div class="stat-card">
