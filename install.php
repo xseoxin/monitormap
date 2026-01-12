@@ -108,44 +108,89 @@ if ($step == 2 && $_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Step 3: Create admin account
 if ($step == 3 && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Enable error display for debugging
+    // Setup debug logging
+    $debugLog = __DIR__ . '/storage/temp/install_debug.log';
+    if (!is_dir(__DIR__ . '/storage/temp')) {
+        @mkdir(__DIR__ . '/storage/temp', 0755, true);
+    }
+
+    function debugLog($message, $debugLog) {
+        $timestamp = date('Y-m-d H:i:s');
+        file_put_contents($debugLog, "[$timestamp] $message\n", FILE_APPEND);
+    }
+
+    // Enable error display
     ini_set('display_errors', 1);
     error_reporting(E_ALL);
+
+    // Clear previous log
+    @file_put_contents($debugLog, '');
+    debugLog('=== INSTALLATION STEP 3 START ===', $debugLog);
 
     $username = $_POST['username'] ?? '';
     $email = $_POST['email'] ?? '';
     $password = $_POST['password'] ?? '';
 
+    debugLog("Username: $username", $debugLog);
+    debugLog("Email: $email", $debugLog);
+    debugLog("Password length: " . strlen($password), $debugLog);
+
     try {
+        debugLog('Step 1: Loading .env file', $debugLog);
+
         // Load .env file manually
         if (file_exists(__DIR__ . '/.env')) {
+            debugLog('.env file exists', $debugLog);
             $lines = file(__DIR__ . '/.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            debugLog('Loaded ' . count($lines) . ' lines from .env', $debugLog);
+
             foreach ($lines as $line) {
                 if (strpos(trim($line), '#') === 0 || strpos($line, '=') === false) {
                     continue;
                 }
                 list($name, $value) = explode('=', $line, 2);
-                putenv(trim($name) . '=' . trim($value));
+                $envName = trim($name);
+                $envValue = trim($value);
+                putenv("$envName=$envValue");
+                debugLog("Set env: $envName = " . (strlen($envValue) > 50 ? substr($envValue, 0, 50) . '...' : $envValue), $debugLog);
             }
+        } else {
+            debugLog('ERROR: .env file does not exist!', $debugLog);
+            throw new Exception('.env file not found');
         }
 
+        debugLog('Step 2: Loading init.php', $debugLog);
         require_once __DIR__ . '/includes/init.php';
+        debugLog('init.php loaded successfully', $debugLog);
 
+        debugLog('Step 3: Creating Auth instance', $debugLog);
         $auth = new Auth();
+        debugLog('Auth instance created', $debugLog);
+
+        debugLog('Step 4: Registering user', $debugLog);
         $result = $auth->register($username, $email, $password, 'admin');
+        debugLog('Register result: ' . json_encode($result), $debugLog);
 
         if ($result['success']) {
+            debugLog('SUCCESS: Admin account created!', $debugLog);
             $success = "Admin account created successfully!";
             header('Location: install.php?step=4');
             exit;
         } else {
+            debugLog('FAILURE: ' . implode(', ', $result['errors']), $debugLog);
             $error = implode(', ', $result['errors']);
         }
     } catch (Exception $e) {
-        $error = "Error creating admin account: " . $e->getMessage() . "<br>Trace: " . $e->getTraceAsString();
+        $errorMsg = "Exception: " . $e->getMessage() . "\nFile: " . $e->getFile() . ":" . $e->getLine() . "\nTrace:\n" . $e->getTraceAsString();
+        debugLog("EXCEPTION: $errorMsg", $debugLog);
+        $error = "Error: " . $e->getMessage() . "<br><br><strong>🔍 View detailed debug log:</strong> <a href='/debug_log.php' target='_blank' style='color: #fff; background: #d9534f; padding: 5px 15px; border-radius: 4px; text-decoration: none; display: inline-block; margin-top: 10px;'>Open Debug Log</a>";
     } catch (Error $e) {
-        $error = "Fatal error: " . $e->getMessage() . "<br>File: " . $e->getFile() . ":" . $e->getLine();
+        $errorMsg = "Fatal Error: " . $e->getMessage() . "\nFile: " . $e->getFile() . ":" . $e->getLine() . "\nTrace:\n" . $e->getTraceAsString();
+        debugLog("FATAL ERROR: $errorMsg", $debugLog);
+        $error = "Fatal Error: " . $e->getMessage() . "<br>File: " . $e->getFile() . ":" . $e->getLine() . "<br><br><strong>🔍 View detailed debug log:</strong> <a href='/debug_log.php' target='_blank' style='color: #fff; background: #d9534f; padding: 5px 15px; border-radius: 4px; text-decoration: none; display: inline-block; margin-top: 10px;'>Open Debug Log</a>";
     }
+
+    debugLog('=== INSTALLATION STEP 3 END ===', $debugLog);
 }
 ?>
 <!DOCTYPE html>
