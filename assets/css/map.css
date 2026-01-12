@@ -1,0 +1,20 @@
+/**
+ * Map Styles
+ */
+
+.leaflet-container {
+    border-radius: 8px;
+}
+
+.map-popup {
+    min-width: 200px;
+}
+
+.map-popup strong {
+    font-size: 14px;
+    color: var(--dark-color);
+}
+
+.map-popup br {
+    margin: 4px 0;
+}

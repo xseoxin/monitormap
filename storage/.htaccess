@@ -1,0 +1,9 @@
+# Deny direct access to storage directory
+# Files will be served through PHP with authentication checks
+Require all denied
+
+# Allow access only to specific file types through PHP validation
+<FilesMatch "\.(csv|json|pdf|png|jpg|jpeg)$">
+    # Access will be controlled by PHP scripts
+    Require all denied
+</FilesMatch>

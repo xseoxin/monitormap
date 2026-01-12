@@ -1,0 +1,2 @@
+# Deny all access to migration files
+Require all denied

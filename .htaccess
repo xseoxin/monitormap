@@ -1,0 +1,32 @@
+# Root .htaccess - Security Configuration
+Options -Indexes
+ServerSignature Off
+
+# Deny access to sensitive files
+<FilesMatch "^\.env|composer\.(json|lock)|package\.json|package-lock\.json">
+    Require all denied
+</FilesMatch>
+
+# Deny access to include files that should not be accessed directly
+<FilesMatch "^(init|functions|constants|auth_check)\.php$">
+    Require all denied
+</FilesMatch>
+
+# Enable PHP error logging (not display)
+php_flag display_errors Off
+php_flag log_errors On
+
+# Security headers
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# Enable rewrite engine for clean URLs
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+</IfModule>
