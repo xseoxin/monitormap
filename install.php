@@ -163,11 +163,27 @@ if ($step == 3 && $_SERVER['REQUEST_METHOD'] === 'POST') {
         require_once __DIR__ . '/includes/init.php';
         debugLog('init.php loaded successfully', $debugLog);
 
-        debugLog('Step 3: Creating Auth instance', $debugLog);
+        debugLog('Step 3: Testing database connection', $debugLog);
+
+        try {
+            debugLog('Step 3a: Attempting to create Database instance', $debugLog);
+            $testDb = Database::getInstance();
+            debugLog('Step 3b: Database instance created successfully', $debugLog);
+        } catch (Exception $dbError) {
+            debugLog('Step 3c: DATABASE CONNECTION FAILED: ' . $dbError->getMessage(), $debugLog);
+            // Check if there's a detailed db error log
+            if (file_exists(__DIR__ . '/storage/temp/db_error.log')) {
+                $dbErrorLog = file_get_contents(__DIR__ . '/storage/temp/db_error.log');
+                debugLog('DB Error details: ' . $dbErrorLog, $debugLog);
+            }
+            throw $dbError;
+        }
+
+        debugLog('Step 4: Creating Auth instance', $debugLog);
         $auth = new Auth();
         debugLog('Auth instance created', $debugLog);
 
-        debugLog('Step 4: Registering user', $debugLog);
+        debugLog('Step 5: Registering user', $debugLog);
         $result = $auth->register($username, $email, $password, 'admin');
         debugLog('Register result: ' . json_encode($result), $debugLog);
 

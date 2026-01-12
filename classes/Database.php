@@ -48,11 +48,13 @@ class Database {
                 $this->config['options']
             );
         } catch (PDOException $e) {
-            Logger::critical('Database connection failed', [
-                'error' => $e->getMessage(),
-                'host' => $this->config['host']
-            ]);
-            throw new Exception('Database connection failed');
+            // Don't use Logger here to avoid circular dependency
+            // Log to file directly during initialization
+            $logMsg = date('Y-m-d H:i:s') . " [CRITICAL] Database connection failed: " . $e->getMessage() . "\n";
+            $logMsg .= "Host: " . $this->config['host'] . ", Database: " . $this->config['database'] . "\n";
+            @file_put_contents(APP_ROOT . '/storage/temp/db_error.log', $logMsg, FILE_APPEND);
+
+            throw new Exception('Database connection failed: ' . $e->getMessage());
         }
     }
 
