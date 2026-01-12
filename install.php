@@ -108,13 +108,29 @@ if ($step == 2 && $_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Step 3: Create admin account
 if ($step == 3 && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    require_once __DIR__ . '/includes/init.php';
+    // Enable error display for debugging
+    ini_set('display_errors', 1);
+    error_reporting(E_ALL);
 
     $username = $_POST['username'] ?? '';
     $email = $_POST['email'] ?? '';
     $password = $_POST['password'] ?? '';
 
     try {
+        // Load .env file manually
+        if (file_exists(__DIR__ . '/.env')) {
+            $lines = file(__DIR__ . '/.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            foreach ($lines as $line) {
+                if (strpos(trim($line), '#') === 0 || strpos($line, '=') === false) {
+                    continue;
+                }
+                list($name, $value) = explode('=', $line, 2);
+                putenv(trim($name) . '=' . trim($value));
+            }
+        }
+
+        require_once __DIR__ . '/includes/init.php';
+
         $auth = new Auth();
         $result = $auth->register($username, $email, $password, 'admin');
 
@@ -126,7 +142,9 @@ if ($step == 3 && $_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = implode(', ', $result['errors']);
         }
     } catch (Exception $e) {
-        $error = "Error creating admin account: " . $e->getMessage();
+        $error = "Error creating admin account: " . $e->getMessage() . "<br>Trace: " . $e->getTraceAsString();
+    } catch (Error $e) {
+        $error = "Fatal error: " . $e->getMessage() . "<br>File: " . $e->getFile() . ":" . $e->getLine();
     }
 }
 ?>
